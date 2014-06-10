@@ -1,0 +1,9 @@
+{application, defpm, [
+  {id, "defpm"},
+  {description, "declare a multi-clause function, similar to erlang"},
+  {vsn, "0.1.0"},
+  {modules, []},
+  {registered, []},
+  {applications, [kernel, stdlib]},
+  {env, []}
+]}.

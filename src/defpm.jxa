@@ -1,0 +1,69 @@
+;; define a pattern match
+(ns defpm
+  (require joxa-core)
+  (require joxa-lists))
+
+(defmacro+ defpm+ (name &rest clauses)
+  "
+  Declare a multi-clause function, similar to erlang.
+
+  Example:
+
+  ```erlang
+  fn(1, dollar) ->
+    '$1';
+  fn(_Amount, _Currency) ->
+    too_high.
+  ```
+
+  ```joxa
+  (defpm+ fn
+   ((1 :dollar)
+    :$1)
+   ((_amount _currency)
+    :too_high))
+  ```
+
+  which ends up getting expanded to
+
+  ```joxa
+  (defn+ fn (a b)
+   (case [a b]
+    ([1 :dollar]
+     :$1)
+    ([_amount _currency]
+     :too_high)))
+  ```
+
+  `when` clauses are also valid
+
+  ```joxa
+  (defpm+ hello
+   ((name)
+     (when (erlang/is_list name))
+    (io/format \"hello ~s~n\" [name]))
+   ((name)
+    (io/format \"goodbye ~p~n\" [name])))
+  ```
+  "
+  (let*
+     ;; get the first item in the list to set our arity
+     ;; TODO check that all of the arities match
+    (args
+      (joxa-lists/hd (joxa-lists/hd clauses))
+
+     ;; replace the extracted arguments with some gensyms
+     names
+      (joxa-lists/map
+       (arg args)
+       (joxa-core/gensym "defpm"))
+
+     ;; wrap each of the arguments in a list so we can pattern match them
+     formatted-clauses
+      (joxa-lists/map
+       ((clargs . rest) clauses)
+       (`(list ~@clargs) . rest)))
+
+    `(defn+ ~name ~names
+      (case (list ~@names)
+       ~@formatted-clauses))))
